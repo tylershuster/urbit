@@ -47,4 +47,5 @@ It uses the Axios library to polyfill the native JavaScript `fetch` which is onl
 Future features include:
 - Reworking the axios calls to use a `fetch`-compatible syntax
 - Adding handlers for sending chat messages with a simpler syntax
+- Browser-ready `dist` file (let me know if you have experience with this)
 - Better tracking of current subscriptions and acks
