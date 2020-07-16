@@ -73,7 +73,7 @@ class Urbit {
         return response;
       })
       .catch((error: any) => {
-        console.log('connection error', error);
+        console.error('connection error', error);
       });
   }
 
@@ -85,13 +85,10 @@ class Urbit {
       const headers = { cookie: this.cookie, connection: 'keep-alive' };
       this.sseClient = new EventSource(this.channelUrl, { headers });
       this.sseClient?.addEventListener('message', (event: MessageEvent) => {
-        console.log(event);
-        const data = JSON.parse(event.data);
-        console.log('data', data);
         this.ack(Number(event.lastEventId));
       });
       this.sseClient?.addEventListener('error', function(event: Event) {
-        console.log('pipe error', event);
+        console.error('pipe error', event);
       });
     }
     return this.sseClient;
@@ -111,7 +108,6 @@ class Urbit {
    * @param eventId The event to acknowledge.
    */
   async ack(eventId: Number): Promise<AxiosResponse> {
-    console.log('acking', eventId);
     return this.sendMessage('ack', { 'event-id': eventId });
   }
 
@@ -148,7 +144,7 @@ class Urbit {
         ],
       })
       .catch((error: any) => {
-        console.log('message error', error);
+        console.error('message error', error);
       });
   }
 
