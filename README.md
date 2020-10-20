@@ -42,6 +42,9 @@ The majority of its methods are asynchronous and return Promises. This is due to
 
 It uses the Axios library to polyfill the native JavaScript `fetch` which is only available in the browser context. It uses a similar approach to `EventSource`.
 
+## NOTE
+In browser context this will not work to subscribe to events on a computer other than the one it is running on. This is due to Urbit's model of channel subscriptions plus browser CORS policies, and it is probably a good restriction to have in place (i.e. not to allow access to foreign ship's data).
+
 ## Future Work
 
 Future features include:
