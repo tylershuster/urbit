@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Demo</title>
-    <script src="index.js"></script>
+    <script src="browser.js"></script>
     <style>
         body {
             margin: 0 auto;
@@ -38,7 +38,7 @@
     code: 'lidlut-tabwed-pillex-ridrup',
     verbose: true
 });
-window.airlock.chatView.subscribe('/primary');</pre>
+window.airlock.subscribe('chat-view', '/primary', { event: console.log });</pre>
     </details>
 
     <button id="blastoff" onclick="blastOff()">Blast Off</button>
@@ -83,7 +83,7 @@ window.airlock.chatView.subscribe('/primary');</pre>
             code: 'lidlut-tabwed-pillex-ridrup',
             verbose: true
         });
-        window.airlock.chatView.subscribe('/primary');
+        window.airlock.subscribe('chat-view', '/primary', { event: console.log });
         document.body.removeChild(document.getElementById('blastoff'))
     }
 </script>

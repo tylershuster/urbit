@@ -6,13 +6,12 @@ export interface AuthenticationInterface {
 }
 
 export interface SubscriptionInterface {
-  err(error: any): void;
-  event(data: any): void;
-  quit(data: any): void;
+  err?(error: any): void;
+  event?(data: any): void;
+  quit?(data: any): void;
 }
 
 export type SubscriptionRequestInterface = SubscriptionInterface & {
-  ship: string;
   app: string;
   path: string;
 }
@@ -33,4 +32,11 @@ export interface UrbitInterface {
 
 export interface CustomEventHandler {
   (data: any, response: string): void;
+}
+
+export interface SSEOptions {
+  headers: {
+    Cookie?: string
+  };
+  withCredentials?: boolean;
 }

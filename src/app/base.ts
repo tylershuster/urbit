@@ -2,11 +2,15 @@ import Urbit from '../urbit';
 
 export interface UrbitAppInterface {
   airlock: Urbit;
+  app: string;
 }
 
 export default class UrbitApp implements UrbitAppInterface {
-  static app: string = 'error';
   airlock: Urbit;
+
+  get app(): string {
+    throw new Error('Access app property on base UrbitApp');
+  }
 
   constructor(airlock: Urbit) {
     this.airlock = airlock;
@@ -29,8 +33,8 @@ export default class UrbitApp implements UrbitAppInterface {
    */
   subscribe(path: string) {
     const ship = this.ship;
-    const app = (this.constructor as typeof UrbitApp).app;
-    return this.airlock.subscribe({ ship, app, path });
+    const app = this.app;
+    return this.airlock.subscribe(app, path);
   }
   // TODO handle methods that don't exist
 }

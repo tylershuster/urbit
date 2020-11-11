@@ -1,5 +1,6 @@
 import Urbit from '../urbit';
 import UrbitApp from './base';
+import { uid } from '../utils';
 
 interface MessageInterface {
   path: string;
@@ -8,15 +9,19 @@ interface MessageInterface {
   ship?: string;
 }
 
+// This class exists an example of how to create an app that extends
+// the core Urbit library.
 class ChatHook extends UrbitApp {
-  static app: string = 'chat-hook';
+  get app(): string {
+    return 'chat-hook';
+  }
 
   message(message: MessageInterface) {
-    return this.airlock.poke(this.ship, 'chat-hook', 'json', {
+    return this.airlock.poke(this.app, 'json', {
       message: {
         path: message.path,
         envelope: {
-          uid: Urbit.uid(),
+          uid: uid(),
           number: 1, // Dummy, gets overwritten
           author: message.ship || `~${this.ship}`,
           when: new Date().getTime(),

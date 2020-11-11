@@ -1,5 +1,4 @@
 const path = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const webpack = require('webpack');
 
 const shared = {
@@ -29,18 +28,17 @@ const shared = {
   resolve: {
     extensions: ['.js', '.ts', '.ts'],
     fallback: {
-      http: require.resolve('stream-http'),
-      https: require.resolve('stream-http'),
       fs: false,
       child_process: false,
       util: require.resolve("util/"),
+      buffer: require.resolve('buffer/'),
+      assert: false,
+      http: require.resolve('stream-http'),
+      https: require.resolve('stream-http'),
       stream: require.resolve('stream-browserify'),
       zlib: require.resolve("browserify-zlib"),
-      buffer: require.resolve('buffer/'),
-      assert: false
     }
   },
-  
   
   optimization: {
     minimize: false,
@@ -61,8 +59,9 @@ const serverConfig = {
   plugins: [
     new webpack.ProvidePlugin({
       XMLHttpRequest: ['xmlhttprequest-ssl', 'XMLHttpRequest'],
-      EventSource: 'eventsource'
-    })
+      EventSource: 'eventsource',
+      fetch: ['node-fetch', 'default'],
+    }),
   ],
 };
 
@@ -77,21 +76,35 @@ const browserConfig = {
   },
   plugins: [
     new webpack.ProvidePlugin({
-      Buffer: 'buffer'
+      Buffer: 'buffer',
     })
   ],
 };
 
-const exampleConfig = {
+
+const exampleBrowserConfig = {
   ...shared,
   mode: 'development',
   entry: {
-     app: './src/example.js'
+     app: './src/example/browser.js'
   },
   output: {
-    filename: 'index.js',
+    filename: 'browser.js',
     path: path.resolve(__dirname, 'example'),
   }
 };
 
-module.exports = [ serverConfig, browserConfig, exampleConfig ];
+const exampleNodeConfig = {
+  ...shared,
+  mode: 'development',
+  target: 'node',
+  entry: {
+     app: './src/example/node.js'
+  },
+  output: {
+    filename: 'node.js',
+    path: path.resolve(__dirname, 'example'),
+  }
+};
+
+module.exports = [ serverConfig, browserConfig, exampleBrowserConfig, exampleNodeConfig ];

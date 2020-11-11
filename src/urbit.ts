@@ -1,33 +1,17 @@
-// import 'eventsource';
-import fetch from 'cross-fetch';
 import { isBrowser, isNode } from 'browser-or-node';
 
-import { AuthenticationInterface, SubscriptionInterface, CustomEventHandler, PokeInterface, SubscriptionRequestInterface, headers, UrbitInterface } from './index.d';
+import { AuthenticationInterface, SubscriptionInterface, CustomEventHandler, PokeInterface, SubscriptionRequestInterface, headers, UrbitInterface, SSEOptions } from './index.d';
 import UrbitApp from './app/base';
-import { uncamelize } from './utils';
-
-
-// view-source:http://localhost/~landscape/js/channel.js
-// https://github.com/liam-fitzgerald/urbit-airlock-ts/blob/master/src/channel.ts
+import { uncamelize, hexString } from './utils';
 
 /**
  * A class for interacting with an urbit ship, given its URL and code
  */
 class Urbit implements UrbitInterface {
   /**
-   * Code is the deterministic password
-   */
-  code: string;
-
-  /**
-   * URL is the location of the instance.
-   */
-  url: string;
-
-  /**
    * UID will be used for the channel: The current unix time plus a random hex string
    */
-  uid: string;
+  uid: string = `${Math.floor(Date.now() / 1000)}-${hexString(6)}`;
 
   /**
    * Last Event ID is an auto-updated index of which events have been sent over this channel
@@ -55,7 +39,7 @@ class Urbit implements UrbitInterface {
    * removed after calling the success or failure function.
    */
 
-  outstandingPokes: Map<number, PokeInterface>;
+  outstandingPokes: Map<number, PokeInterface> = new Map();
 
   /**
    * A registry of requestId to subscription functions.
@@ -67,7 +51,7 @@ class Urbit implements UrbitInterface {
    * disconnect function may be called exactly once.
    */
 
-  outstandingSubscriptions: Map<number, SubscriptionInterface>;
+  outstandingSubscriptions: Map<number, SubscriptionInterface> = new Map();
 
   /**
    * Ship can be set, in which case we can do some magic stuff like send chats
@@ -89,19 +73,30 @@ class Urbit implements UrbitInterface {
     return `${this.url}/~/channel/${this.uid}`;
   }
 
+  get fetchOptions(): any {
+    const headers: headers = {
+      'Content-Type': 'application/json',
+    };
+    if (!isBrowser) {
+      headers.Cookie = this.cookie;
+    }
+    return {
+      credentials: 'include',
+      headers
+    };
+  }
+
   /**
    * Constructs a new Urbit connection.
    *
    * @param url  The URL (with protocol and port) of the ship to be accessed
    * @param code The access code for the ship at that address
    */
-  constructor(url: string, code: string) {
-    this.uid = `${Math.floor(Date.now() / 1000)}-${Urbit.hexString(6)}`;
-    this.code = code;
-    this.url = url;
-    this.outstandingPokes = new Map();
-    this.outstandingSubscriptions = new Map();
-
+  constructor(
+    public url: string,
+    public code: string
+  ) {
+    // We return a proxy so we can set dynamic properties like `Urbit.onChatHook`
     return new Proxy(this, {
       get(target: Urbit, property: string) {
         // First check if this is a regular property
@@ -152,7 +147,7 @@ class Urbit implements UrbitInterface {
     airlock.verbose = verbose;
     airlock.ship = ship;
     await airlock.connect();
-    await airlock.poke(ship, 'hood', 'helm-hi', 'opening airlock');
+    await airlock.poke('hood', 'helm-hi', 'opening airlock');
     await airlock.eventSource();
     return airlock;
   }
@@ -173,8 +168,12 @@ class Urbit implements UrbitInterface {
       if (this.verbose) {
         console.log('Received authentication response', response);
       }
+      const cookie = response.headers.get('set-cookie');
+      if (!this.ship) {
+        this.ship = new RegExp(/urbauth-~([\w-]+)/).exec(cookie)[1];
+      }
       if (!isBrowser) {
-        this.cookie = response.headers.get('set-cookie');
+        this.cookie = cookie;
       }
     }).catch(error => {
       console.log(XMLHttpRequest);
@@ -189,7 +188,7 @@ class Urbit implements UrbitInterface {
    */
   eventSource(): EventSource {
     if (!this.sseClient) {
-      const sseOptions = {
+      const sseOptions: SSEOptions = {
         headers: {}
       };
       if (isBrowser) {
@@ -198,7 +197,7 @@ class Urbit implements UrbitInterface {
         sseOptions.headers.Cookie = this.cookie;
       }
       this.sseClient = new EventSource(this.channelUrl, sseOptions);
-      this.sseClient?.addEventListener('message', (event: MessageEvent) => {
+      this.sseClient!.addEventListener('message', (event: MessageEvent) => {
         if (this.verbose) {
           console.log('Received SSE: ', event);
         }
@@ -254,7 +253,7 @@ class Urbit implements UrbitInterface {
           // }
         }
       });
-      this.sseClient?.addEventListener('error', function(event: Event) {
+      this.sseClient!.addEventListener('error', function(event: Event) {
         console.error('pipe error', event);
       });
     }
@@ -274,7 +273,7 @@ class Urbit implements UrbitInterface {
    *
    * @param eventId The event to acknowledge.
    */
-  async ack(eventId: number): Promise<void | number> {
+   ack(eventId: number): Promise<void | number> {
     return this.sendMessage('ack', { 'event-id': eventId });
   }
 
@@ -289,30 +288,23 @@ class Urbit implements UrbitInterface {
    * 
    * @returns void | number If successful, returns the number of the message that was sent
    */
-  async sendMessage(action: string, data?: object): Promise<void | number> {
-    const headers: headers = {
-      'Content-Type': 'application/json',
-    };
-    if (!isBrowser) {
-      headers.Cookie = this.cookie;
-    }
+  sendMessage(action: string, data?: object): Promise<void | number> {
+    
     const id = this.getEventId();
     if (this.verbose) {
-      console.log(`Sending message ${id}:`, action, data, headers);
+      console.log(`Sending message ${id}:`, action, data,);
     }
     return fetch(this.channelUrl, {
+      ...this.fetchOptions,
       method: 'put',
-      headers,
-      credentials: 'include',
       body: JSON.stringify([{
         id,
         action,
         ...data,
-      }])
+      }]),
     }).catch((error: any) => {
       console.error('message error', error);
-    })
-    .then(response => {
+    }).then(response => {
       if (this.verbose) {
         console.log(`Received from message ${id}: `, response);
       }
@@ -323,20 +315,18 @@ class Urbit implements UrbitInterface {
   /**
    * Pokes a ship with data.
    *
-   * @param ship The ship to poke
    * @param app The app to poke
    * @param mark The mark of the data being sent
    * @param json The data to send
    */
   async poke(
-    ship: string = this.ship ? this.ship : '',
     app: string,
     mark: string,
     json: Object,
     successFunc = () => {},
     failureFunc = () => {}
   ): Promise<void | number> {
-    const pokeId = await this.sendMessage('poke', { ship, app, mark, json });
+    const pokeId = await this.sendMessage('poke', { ship: this.ship, app, mark, json });
 
     if (!pokeId) return;
 
@@ -351,19 +341,14 @@ class Urbit implements UrbitInterface {
   /**
    * Subscribes to a path on an app on a ship.
    *
-   * @param ship The ship to subscribe to
    * @param app The app to subsribe to
    * @param path The path to which to subscribe
+   * @param handlers Handlers to deal with various events of the subscription
    */
-  async subscribe({
-    ship = this.ship ? this.ship : '',
-    app,
-    path,
-    err = () => {},
-    event = () => {},
-    quit = () => {}
-  }: SubscriptionRequestInterface): Promise<void | number> {
-    const subscriptionId = await this.sendMessage('subscribe', { ship, app, path });
+  async subscribe(app: string, path: string, handlers?: Partial<SubscriptionInterface>): Promise<void | number> {
+    const { err, event, quit } = { err: () => {}, event: () => {}, quit: () => {}, ...handlers };
+
+    const subscriptionId = await this.sendMessage('subscribe', { ship: this.ship, app, path });
 
     if (!subscriptionId) return;
 
@@ -379,24 +364,37 @@ class Urbit implements UrbitInterface {
    *
    * @param subscription
    */
-  async unsubscribe(subscription: string): Promise<void | number> {
+  unsubscribe(subscription: string): Promise<void | number> {
     return this.sendMessage('unsubscribe', { subscription });
   }
 
   /**
    * Deletes the connection to a channel.
    */
-  async delete(): Promise<void | number> {
+  delete(): Promise<void | number> {
     return this.sendMessage('delete');
   }
 
-  async scry(app: string, path: string): Promise<void | any> {
-    return fetch(`/~/scry/${app}${path}.json`)
+  /**
+   * 
+   * @param app   The app into which to scry
+   * @param path  The path at which to scry
+   */
+  scry(app: string, path: string): Promise<void | any> {
+    return fetch(`/~/scry/${app}${path}.json`, this.fetchOptions)
       .then(response => response.json());
   }
 
+  /**
+   * 
+   * @param inputMark   The mark of the data being sent
+   * @param outputMark  The mark of the data being returned
+   * @param threadName  The thread to run
+   * @param body        The data to send to the thread
+   */
   async spider<T>(inputMark: string, outputMark: string, threadName: string, body: any): Promise<T> {
     const res = await fetch(`/spider/${inputMark}/${threadName}/${outputMark}.json`, {
+      ...this.fetchOptions,
       method: 'POST',
       body: JSON.stringify(body)
     });
@@ -421,41 +419,6 @@ class Urbit implements UrbitInterface {
   static async onArvoNetwork(ship: string, code: string): Promise<Urbit> {
     const url = `https://${name}.arvo.network`;
     return await Urbit.authenticate({ ship, url, code });
-  }
-
-  /**
-   * Returns a hex string of given length.
-   *
-   * Poached from StackOverflow.
-   *
-   * @param len Length of hex string to return.
-   */
-  static hexString(len: number): string {
-    const maxlen = 8;
-    const min = Math.pow(16, Math.min(len, maxlen) - 1);
-    const max = Math.pow(16, Math.min(len, maxlen)) - 1;
-    const n = Math.floor(Math.random() * (max - min + 1)) + min;
-    let r = n.toString(16);
-    while (r.length < len) {
-      r = r + Urbit.hexString(len - maxlen);
-    }
-    return r;
-  }
-
-  /**
-   * Generates a random UID.
-   *
-   * Copied from https://github.com/urbit/urbit/blob/137e4428f617c13f28ed31e520eff98d251ed3e9/pkg/interface/src/lib/util.js#L3
-   */
-  static uid(): string {
-    let str = '0v';
-    str += Math.ceil(Math.random() * 8) + '.';
-    for (let i = 0; i < 5; i++) {
-      let _str = Math.ceil(Math.random() * 10000000).toString(32);
-      _str = ('00000' + _str).substr(-5, 5);
-      str += _str + '.';
-    }
-    return str.slice(0, -1);
   }
 
   static extend(appClass: typeof UrbitApp): void {
