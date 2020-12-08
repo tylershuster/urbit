@@ -1,27 +1,15 @@
 {
-  "include": ["src"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "@types"],
   "compilerOptions": {
+	  "outDir": "./dist",
+    "module": "commonjs",
     "noImplicitAny": true,
-    "noEmitOnError": true,
-    "target": "es6",
-    "module": "ES2015",
-    "lib": ["dom", "esnext"],
-    "importHelpers": true,
-    "declaration": true,
-    "sourceMap": true,
-    "rootDir": "./src",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
+    "target": "es2015",
+    "pretty": true,
     "moduleResolution": "node",
-    "baseUrl": "./",
-    "paths": {
-      "*": ["src/*", "node_modules/*"]
-    },
-    "jsx": "react",
-    "allowSyntheticDefaultImports" : true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": true
   }
 }
