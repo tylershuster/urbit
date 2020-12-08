@@ -6,16 +6,24 @@
     <title>Demo</title>
     <script src="browser.js"></script>
     <style>
+        @import url("https://rsms.me/inter/inter.css");
+        @font-face {
+            font-family: "Source Code Pro";
+            src: url("https://storage.googleapis.com/media.urbit.org/fonts/scp-regular.woff");
+            font-weight: 400;
+        }
         body {
             margin: 0 auto;
             max-width: 70ch;
             padding: 2ch;
+            font-family: 'Inter', sans-serif;
         }
         #mylog {
             white-space: pre-wrap;
             padding: 2ch;
             background: black;
             color: white;
+            font-family: 'Source Code Pro', monospace;
         }
         #mylog div {
             margin-bottom: 1rem;

@@ -34,7 +34,7 @@ class Urbit implements UrbitInterface {
    * A registry of requestId to successFunc/failureFunc
    * 
    * These functions are registered during a +poke and are executed
-   * in the TODO onServerEvent()/onServerError() callbacks. Only one of
+   * in the onServerEvent()/onServerError() callbacks. Only one of
    * the functions will be called, and the outstanding poke will be
    * removed after calling the success or failure function.
    */
@@ -319,23 +319,32 @@ class Urbit implements UrbitInterface {
    * @param mark The mark of the data being sent
    * @param json The data to send
    */
-  async poke(
+  poke(
     app: string,
     mark: string,
     json: Object,
     successFunc = () => {},
     failureFunc = () => {}
   ): Promise<void | number> {
-    const pokeId = await this.sendMessage('poke', { ship: this.ship, app, mark, json });
-
-    if (!pokeId) return;
-
-    this.outstandingPokes.set(pokeId, {
-      success: successFunc,
-      fail: failureFunc
+    return new Promise((resolve, reject) => {
+      this
+        .sendMessage('poke', { ship: this.ship, app, mark, json })
+        .then(pokeId => {
+          if (!pokeId) {
+            return reject('Poke failed');
+          }
+          this.outstandingPokes.set(pokeId, {
+            success: () => {
+              successFunc();
+              resolve(pokeId);
+            },
+            fail: (event) => {
+              failureFunc();
+              reject(event.err);
+            }
+          });
+        });
     });
-
-    return pokeId;
   }
 
   /**
