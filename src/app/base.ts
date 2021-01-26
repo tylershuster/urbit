@@ -1,4 +1,4 @@
-import Urbit from '../urbit';
+import Urbit from '..';
 
 export interface UrbitAppInterface {
   airlock: Urbit;

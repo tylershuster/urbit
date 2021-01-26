@@ -1,3 +1,10 @@
+import { Action, Mark, Poke } from '../../../api/index';
+
+export interface PokeInterface extends Poke<Mark, any> {
+  onSuccess?: () => void;
+  onError?: () => void;
+}
+
 export interface AuthenticationInterface {
   ship: string;
   url: string;
@@ -16,11 +23,6 @@ export type SubscriptionRequestInterface = SubscriptionInterface & {
   path: string;
 }
 
-export interface PokeInterface {
-  success(): void;
-  fail(error: any): void;
-}
-
 export interface headers {
   'Content-Type': string;
   Cookie?: string;
@@ -35,7 +37,7 @@ export interface CustomEventHandler {
 }
 
 export interface SSEOptions {
-  headers: {
+  headers?: {
     Cookie?: string
   };
   withCredentials?: boolean;

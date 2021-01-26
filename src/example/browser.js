@@ -1,3 +1,3 @@
-import Urbit from '../../dist/browser';
+// import Urbit from '../../dist/browser';
 
-window.Urbit = Urbit;
+// window.Urbit = Urbit;

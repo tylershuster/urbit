@@ -53,8 +53,7 @@ const serverConfig = {
     filename: 'index.js',
     path: path.resolve(__dirname, 'dist'),
     library: 'Urbit',
-    libraryExport: 'default',
-    libraryTarget: 'umd'
+    libraryExport: 'default'
   },
   plugins: [
     new webpack.ProvidePlugin({
@@ -67,17 +66,17 @@ const serverConfig = {
 
 const browserConfig = {
   ...shared,
+  target: 'web',
   output: {
     filename: 'browser.js',
     path: path.resolve(__dirname, 'dist'),
     library: 'Urbit',
-    libraryExport: 'default',
-    libraryTarget: 'umd'
+    libraryExport: 'default'
   },
   plugins: [
     new webpack.ProvidePlugin({
       Buffer: 'buffer',
-    })
+    }),
   ],
 };
 
