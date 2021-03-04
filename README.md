@@ -2,6 +2,8 @@
 
 This project allows you to connect to an [Urbit](https://urbit.org) ship via a JavaScript application.
 
+[![awesome urbit badge](https://img.shields.io/badge/~-awesome%20urbit-lightgrey)](https://github.com/urbit/awesome-urbit)
+
 ## Example
 
 Check out the `example` directory for examples of how to use this code.
