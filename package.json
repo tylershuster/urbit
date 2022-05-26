@@ -53,7 +53,7 @@
     "browserify-zlib": "^0.2.0",
     "buffer": "^5.7.1",
     "encoding": "^0.1.13",
-    "eventsource": "^1.0.7",
+    "eventsource": "^2.0.2",
     "node-fetch": "^2.6.1",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.1.1",
